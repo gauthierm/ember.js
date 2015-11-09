@@ -217,14 +217,18 @@ function normalizeComponentAttributes(component, isAngleBracket, attrs, canChang
   // being appended, and unbind type.
   if (normalized.type && !canChangeType) {
     if (normalized.type[0] === 'get') {
+      // Handle case when type is a bound attribute but has no attribute value
+      // specified in the component template. Look up the default value in the
+      // component.
       Ember.warn(`Bound type attr on input. In IE8 this attribute will not be updated after initial render. https://github.com/tildeio/htmlbars/issues/380.`);
       var type = normalized.type[1];
       var periodIndex = type.indexOf(".");
       var property = type.substring(periodIndex + 1);
-
-      normalized.type = component.parentView.get(property);
-    } else if (normalized.type[0] === 'value' && typeof(normalized.type[1] !== 'string')) {
-      Ember.warn(`Bound type attr on input. In IE8 this attribute will not be updated after initial render. https://github.com/tildeio/htmlbars/issues/380.`);
+      normalized.type = component.get(property);
+    } else if (normalized.type[0] === 'value' && typeof normalized.type[1] !== 'string') {
+      // Handle case where a non-string value is passed as an attribute in the
+      // component template. Fall back to the default value in the component.
+      Ember.warn(`Invalid type attr on input. In IE8 this attribute will not be updated after initial render. https://github.com/tildeio/htmlbars/issues/380.`);
       normalized.type = component.get('type');
     } else {
       normalized.type = normalized.type[1];
