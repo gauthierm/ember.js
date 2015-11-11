@@ -26,8 +26,7 @@ export default function buildComponentTemplate({ component, layout, isAngleBrack
     // element. We use `manualElement` to create a template that represents
     // the wrapping element and yields to the previous block.
     if (tagName !== '') {
-      var canChangeType = canChangeTypeAfterRender(attrs);
-      var attributes = normalizeComponentAttributes(component, isAngleBracket, attrs, canChangeType);
+      var attributes = normalizeComponentAttributes(component, isAngleBracket, attrs);
       var elementTemplate = internal.manualElement(tagName, attributes);
       elementTemplate.meta = meta;
 
@@ -59,15 +58,6 @@ var isTypeAttributeMutable = (function() {
   }
   return true;
 })();
-
-function canChangeTypeAfterRender(attrs) {
-  // This permits testing of the unbound type attr behavior outside of IE8.
-  if (attrs.ie8SafeInput) {
-    return false;
-  }
-
-  return isTypeAttributeMutable;
-}
 
 function blockFor(template, options) {
   Ember.assert("BUG: Must pass a template to blockFor", !!template);
@@ -139,7 +129,7 @@ function tagNameFor(view) {
 
 // Takes a component and builds a normalized set of attribute
 // bindings consumable by HTMLBars' `attribute` hook.
-function normalizeComponentAttributes(component, isAngleBracket, attrs, canChangeType) {
+function normalizeComponentAttributes(component, isAngleBracket, attrs) {
   var normalized = {};
   var attributeBindings = component.attributeBindings;
   var i, l;
@@ -150,6 +140,12 @@ function normalizeComponentAttributes(component, isAngleBracket, attrs, canChang
     component.elementId = normalized.id;
   } else {
     normalized.id = component.elementId;
+  }
+
+  // IE 8 can not update the type attribute after an element is added to a
+  // document. Force a static value here.
+  if (attrs.type && !isTypeAttributeMutable) {
+    attrs.type = getValue(attrs.type);
   }
 
   if (attributeBindings) {
@@ -215,7 +211,7 @@ function normalizeComponentAttributes(component, isAngleBracket, attrs, canChang
   // IE8 Support: IE8 cannot change the type attr of an input after it has been appended to
   // any node. Therefore, we detect if the browser cannot change the type of the input after
   // being appended, and unbind type.
-  if (normalized.type && !canChangeType) {
+  /*  if (normalized.type && !canChangeType) {
     if (normalized.type[0] === 'get') {
       // Handle case when type is a bound attribute but has no attribute value
       // specified in the component template. Look up the default value in the
@@ -234,7 +230,7 @@ function normalizeComponentAttributes(component, isAngleBracket, attrs, canChang
       normalized.type = normalized.type[1];
     }
   }
-
+*/
   return normalized;
 }
 
